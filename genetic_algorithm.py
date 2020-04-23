@@ -82,7 +82,6 @@ def create_initial_population(size, aa_sequence_source):
             member.append(d2_lattice)
             member.append(score_lattice(d2_lattice))
             initial_population.append(member)
-            print(len(initial_population))
 
     return initial_population
 
@@ -152,30 +151,98 @@ def get_traversal_info(traversal, orientation):
     return [delta_r, delta_c, new_orientation]
 
 
-# def get_cardinal_direction(path):
-#     count = 0
-#
-#     for letter in path:
-#         if letter == "L":
-#             count = count - 1
-#         if letter == "R":
-#             count = count + 1
-#         if letter
-#
-
-
 def score_lattice(d2_lattice):
-    # IMPLEMENT LATER
-    return -sys.maxsize
-
-
-def create_hp_model(filename):
+    # dictionary of all amino acids
     # H-Hydrophobic, F-Hydrophilic
     amino_dict = {'X': 'H', 'A': 'H', 'R': 'F', 'N': 'F', 'D': 'F',
                   'C': 'H', 'Q': 'F', 'E': 'F', 'G': 'F', 'H': 'F',
                   'I': 'H', 'L': 'H', 'K': 'F', 'M': 'H', 'F': 'H',
                   'P': 'H', 'S': 'F', 'T': 'F', 'W': 'H', 'Y': 'H', 'V': 'H'}
+    score = 0
+    considered_aas = []
+    # traverse d2_lattice matrix
+    for r in range(0, len(d2_lattice), 1):
+        for c in range(0, len(d2_lattice), 1):
+            is_current_aa_considered = False
+            current_aa = d2_lattice[r, c]
+            # if the current index contains an amino acid, check for hydrophobia
+            if not current_aa[0] == "None":
+                if amino_dict[current_aa[1]] == 'H':
+                    # check if the current amino acid has already been considered for an H-H bond
+                    for i in range(0, len(considered_aas), 1):
+                        # if it has been, set flag
+                        if considered_aas[i] == current_aa[0]:
+                            is_current_aa_considered = True
+                            break
+                    # if the current amino acid has not already been considered for an H-H bond, check for nearby H's
+                    if not is_current_aa_considered:
+                        is_above_aa_considered = False
+                        is_left_aa_considered = False
+                        is_right_aa_considered = False
+                        is_below_aa_considered = False
+                        above_aa = d2_lattice[r-1, c]
+                        left_aa = d2_lattice[r, c-1]
+                        right_aa = d2_lattice[r, c+1]
+                        below_aa = d2_lattice[r+1, c]
+                        # check if nearby amino acids have already been considered for an H-H bond
+                        for i in range(0, len(considered_aas), 1):
+                            # if above amino acid has been considered, set flag
+                            if considered_aas[i] == above_aa[0]:
+                                is_above_aa_considered = True
+                            # if left amino acid has been considered, set flag
+                            if considered_aas[i] == left_aa[0]:
+                                is_left_aa_considered = True
+                            # if right amino acid has been considered, set flag
+                            if considered_aas[i] == right_aa[0]:
+                                is_right_aa_considered = True
+                            # if below amino acid has been considered, set flag
+                            if considered_aas[i] == below_aa[0]:
+                                is_below_aa_considered = True
+                        # if right amino acid hasn't been considered, check if it is an H
+                        if not is_right_aa_considered and not right_aa[1] == "None":
+                            if amino_dict[right_aa[1]] == 'H':
+                                # if right amino acid is an H, check if it's linked to the current amino acid
+                                # if it is an unconsidered H that isn't linked to the current amino acid, it is an H-H connection
+                                if not (current_aa[2] == right_aa[0] or current_aa[3] == right_aa[0]):
+                                    score = score + 1  # increment score
+                                    # add both amino acids to the list of considered amino acids
+                                    considered_aas.append(current_aa[0])
+                                    considered_aas.append(right_aa[0])
+                        # if left amino acid hasn't been considered, check if it is an H
+                        if not is_left_aa_considered and not left_aa[1] == "None":
+                            if amino_dict[left_aa[1]] == 'H':
+                                # if left amino acid is an H, check if it's linked to the current amino acid
+                                # if it is an unconsidered H that isn't linked to the current amino acid, it is an H-H connection
+                                if not (current_aa[2] == left_aa[0] or current_aa[3] == left_aa[0]):
+                                    score = score + 1  # increment score
+                                    # add both amino acids to the list of considered amino acids
+                                    considered_aas.append(current_aa[0])
+                                    considered_aas.append(left_aa[0])
+                        # if above amino acid hasn't been considered, check if it is an H
+                        if not is_above_aa_considered and not above_aa[1] == "None":
+                            if amino_dict[above_aa[1]] == 'H':
+                                # if above amino acid is an H, check if it's linked to the current amino acid
+                                # if it is an unconsidered H that isn't linked to the current amino acid, it is an H-H connection
+                                if not (current_aa[2] == above_aa[0] or current_aa[3] == above_aa[0]):
+                                    score = score + 1  # increment score
+                                    # add both amino acids to the list of considered amino acids
+                                    considered_aas.append(current_aa[0])
+                                    considered_aas.append(above_aa[0])
+                        # if below amino acid hasn't been considered, check if it is an H
+                        if not is_below_aa_considered and not below_aa[1] == "None":
+                            if amino_dict[below_aa[1]] == 'H':
+                                # if below amino acid is an H, check if it's linked to the current amino acid
+                                # if it is an unconsidered H that isn't linked to the current amino acid, it is an H-H connection
+                                if not (current_aa[2] == below_aa[0] or current_aa[3] == below_aa[0]):
+                                    score = score + 1  # increment score
+                                    # add both amino acids to the list of considered amino acids
+                                    considered_aas.append(current_aa[0])
+                                    considered_aas.append(below_aa[0])
 
+    return score
+
+
+def create_hp_model(filename):
     # open and read amino acid sequence from the fasta file
     try:
         input_file = open(filename, "r")
@@ -194,157 +261,6 @@ def create_hp_model(filename):
 
     init_pop = create_initial_population(100, aa_sequence)
 
-    # # H-Hydrophobic, F-Hydrophilic
-    # amino_dict = {"X": "H", "A": "H", "R": "F", "N": "F", "D": "F",
-    #               "C": "H", "Q": "F", "E": "F", "G": "F", "H": "F",
-    #               "I": "H", "L": "H", "K": "F", "M": "H", "F": "H",
-    #               "P": "H", "S": "F", "T": "F", "W": "H", "Y": "H", "V": "H"}
-    # # This shows the proteins that are hydrophobic and hydrophilic in the input sequence
-    # h_f_list = []
-
-    # open and read from the fasta file
-    # try:
-    #     input_file = open(filename, "r")
-    # except FileNotFoundError:
-    #     print("Error: specified input file, '" + filename + "', does not exist.")
-    #     sys.exit(1)
-    #
-    # raw_sequences = []
-    # amino_acid_sequences = []
-    # single_aminos = []
-    # # Trim the header from the input file
-    # for raw_sequence in input_file:
-    #     if raw_sequence[0] != ">":
-    #         raw_sequences.append(raw_sequence)
-    # # Trim the new line character from the
-    # for sequence in raw_sequences:
-    #     amino_acid_sequence = sequence[0:-1]
-    #     amino_acid_sequences.append(amino_acid_sequence)
-    # for polypeptide in amino_acid_sequences:
-    #     for i in range(len(polypeptide)):
-    #         single_aminos.append(polypeptide[i])
-    #
-    # sequence_length = len(single_aminos)
-    # print(single_aminos)
-    # print(sequence_length)
-    #
-    # # fill up the h_f_list for the input file.
-    # for x in single_aminos:
-    #     amino_property = amino_dict.get(x)
-    #     h_f_list.append(amino_property)
-    # print(h_f_list)
-    #
-    # # |--------------------CREATING THE POPULATION--------------------|
-    # directions = create_population(sequence_length)
-    #
-    # # |--------------------SELECTION--------------------|
-    # # 1. Evaluating fitness
-    # # If the direction contains LLL or FFF then we can't consider it fit
-    # has_kids = False
-    # while not has_kids:
-    #     # This contains the fit children
-    #     fit_directions = []
-    #     for direction in directions:
-    #         if not direction.__contains__("LLLL") | direction.__contains__("RRRR"):
-    #             fit_directions.append(direction)
-    #     # This happens if all children have bumps. In this case try making a new population until you have kids that
-    #     # don't have bumps
-    #     if len(fit_directions) == 0:
-    #         has_kids = False
-    #         directions = create_population(sequence_length)
-    #     else:
-    #         has_kids = True
-    #
-    # # At this point fit_directions contains the directions that don't cause bumps.
-    # # Use the directions to plot the Hydrophobic or Hydrophillic properties in a 2-D array.
-    # # First get the cardinal direction based off of each direction.
-    # count = 0
-    # d = "W"
-    # facing = []
-    # fd = []
-    # for direction in fit_directions:
-    #     for letter in direction:
-    #         # remove fd later
-    #         fd.append(letter)
-    #
-    #         if letter == "L":
-    #             count = count - 1
-    #         elif letter == "R":
-    #             count = count + 1
-    #         else:
-    #             count = count + 0
-    #
-    #         if count % 4 == 0:
-    #             d = "E"
-    #         elif count % 4 == 1:
-    #             d = "S"
-    #         elif count % 4 == 2:
-    #             d = "W"
-    #         elif count % 4 == 3:
-    #             d = "N"
-    #         facing.append(d)
-    #
-    #     # At this point we have the correct cardinal directions based off of each direction we had to go in.
-    #     # Fill out a 2D matrix that is sequence_length by sequence_length; starting from the middle;
-    #     # in the lattice represent H(Hydrophobic) as 1 and F(Hydrophyllic) as 0
-    #     x = int(sequence_length / 2)
-    #     y = int(sequence_length / 2)
-    #     lattice = [[2] * sequence_length] * sequence_length
-    #     matrix = numpy.array(lattice)
-    #
-    #     # If the sequence starts with a Hydrophobic protein insert a "1" at the center of the matrix insert "0"
-    #     # otherwise
-    #     if h_f_list[0] == "H":
-    #         matrix[x][y] = 1
-    #     else:
-    #         matrix[x][y] = 0
-    #     for i in range(sequence_length):
-    #         if facing[i - 1] == "N":
-    #             if fd[i] == "L":
-    #                 y = y - 1
-    #             elif fd[i] == "R":
-    #                 y = y + 1
-    #             elif fd[i] == "F":
-    #                 x = x + 1
-    #
-    #         elif facing[i - 1] == "E":
-    #             if fd[i] == "L":
-    #                 x = x + 1
-    #             elif fd[i] == "R":
-    #                 x = x - 1
-    #             elif fd[i] == "F":
-    #                 y = y + 1
-    #
-    #         elif facing[i - 1] == "S":
-    #             if fd[i] == "L":
-    #                 y = y + 1
-    #             elif fd[i] == "R":
-    #                 y = y - 1
-    #             elif fd[i] == "F":
-    #                 x = x - 1
-    #
-    #         elif facing[i - 1] == "W":
-    #             if fd[i] == "L":
-    #                 x = x - 1
-    #             elif fd[i] == "R":
-    #                 x = x + 1
-    #             elif fd[i] == "F":
-    #                 y = y - 1
-    #
-    #         if h_f_list[i] == "H":
-    #             matrix[x][y] = 1
-    #         else:
-    #             matrix[x][y] = 0
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #     print(fd)
-    #     print(matrix)
-    # print(facing)
     return 0
 
 
