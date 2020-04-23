@@ -5,11 +5,28 @@ import random
 
 def main():
     filename = "SeaCucumberGlobin.txt"
-    create_hp_model(filename)
+    size = 100
+    population = create_initial_population(filename, size)
 
 
 # method to generate the initial population
-def create_initial_population(size, aa_sequence_source):
+def create_initial_population(filename, size):
+    # open and read amino acid sequence from the fasta file
+    try:
+        input_file = open(filename, "r")
+    except FileNotFoundError:
+        print("Error: specified input file, '" + filename + "', does not exist.")
+        sys.exit(1)
+
+    aa_sequence_raw = []
+    for line in input_file:
+        if '>' not in line:
+            aa_sequence_raw.append(line.rstrip('\r\n'))
+    aa_sequence = []
+    for sequence_segment in aa_sequence_raw:
+        for aa in sequence_segment:
+            aa_sequence.append(aa)
+
     # Create the population of directions; F,L,and R.
     initial_population = []  # variable to store the initial population
     while len(initial_population) < size:
@@ -24,15 +41,15 @@ def create_initial_population(size, aa_sequence_source):
         orientation = 'E'  # current orientation in units of cardinal direction
         traverse_sequence = []  # sequence of traversal moves
         bump = False  # flag for if there's a bump
-        for i in range(0, len(aa_sequence_source), 1):
+        for i in range(0, len(aa_sequence), 1):
             bump = True
             # insert amino acids into the positions they should go
             if i == 0:
-                d2_lattice[r_index, c_index] = [i, aa_sequence_source[i], "None", i+1]
-            elif i == len(aa_sequence_source)-1:
-                d2_lattice[r_index, c_index] = [i, aa_sequence_source[i], i-1, "None"]
+                d2_lattice[r_index, c_index] = [i, aa_sequence[i], "None", i+1]
+            elif i == len(aa_sequence)-1:
+                d2_lattice[r_index, c_index] = [i, aa_sequence[i], i-1, "None"]
             else:
-                d2_lattice[r_index, c_index] = [i, aa_sequence_source[i], i-1, i+1]
+                d2_lattice[r_index, c_index] = [i, aa_sequence[i], i-1, i+1]
 
             # loop to catch a bump and try to avoid it
             tries_remaining = 27  # has 27 tries to choose a traversal that doesn't result in a bump
@@ -74,7 +91,7 @@ def create_initial_population(size, aa_sequence_source):
             member.append(d2_lattice)
             member.append(score_lattice(d2_lattice))
             initial_population.append(member)
-
+            print(member[2])
     return initial_population
 
 
@@ -230,30 +247,7 @@ def score_lattice(d2_lattice):
                                     # add both amino acids to the list of considered amino acids
                                     considered_aas.append(current_aa[0])
                                     considered_aas.append(below_aa[0])
-
     return score
-
-
-def create_hp_model(filename):
-    # open and read amino acid sequence from the fasta file
-    try:
-        input_file = open(filename, "r")
-    except FileNotFoundError:
-        print("Error: specified input file, '" + filename + "', does not exist.")
-        sys.exit(1)
-
-    aa_sequence_raw = []
-    for line in input_file:
-        if '>' not in line:
-            aa_sequence_raw.append(line.rstrip('\r\n'))
-    aa_sequence = []
-    for sequence_segment in aa_sequence_raw:
-        for aa in sequence_segment:
-            aa_sequence.append(aa)
-
-    init_pop = create_initial_population(100, aa_sequence)
-
-    return 0
 
 
 if __name__ == '__main__':
