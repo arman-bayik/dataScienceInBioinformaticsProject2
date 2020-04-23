@@ -10,15 +10,7 @@ def main():
 
 # method to generate the initial population
 def create_initial_population(size, aa_sequence_source):
-    # # Create the population of directions; F,L,and R.
-    # letters = "FLR"
-    # # stores the population of directions
-    # directions = []
-    # # initialize the population to 5 children.
-    # for j in range(100):
-    #     direction = ''.join(random.choice(letters) for i in range(size))
-    #     directions.append(direction)
-
+    # Create the population of directions; F,L,and R.
     initial_population = []  # variable to store the initial population
     while len(initial_population) < size:
         member = []  # variable to represent a member of the initial population in the form [traverse_sequence, d2_lattice, score]
