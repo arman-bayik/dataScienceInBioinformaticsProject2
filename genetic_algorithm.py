@@ -37,10 +37,7 @@ def main():
         child = create_child(breeders, aa_sequence)
         children.append(child)
 
-    print(scores)
-    print(parents)
-    print(children)
-
+    print(numpy.average(scores))
     return 0
 
 
@@ -110,7 +107,6 @@ def create_initial_population(aa_sequence, size):
             member.append(d2_lattice)
             member.append(score_lattice(d2_lattice))
             initial_population.append(member)
-            print(member[2])
     return initial_population
 
 
@@ -286,45 +282,44 @@ def mutate(child_traversal_sequence, aa_sequence):
     # We have to have a mutation rate as well.
     # 1% mutation rate
     mutation_rate = 1
-    bump = True
     size = len(child_traversal_sequence)
     child_d2_lattice = numpy.ndarray([2 * size + 2, 2 * size + 2], dtype=object)
+    score = 0
     for r in range(0, len(child_d2_lattice), 1):
         for c in range(0, len(child_d2_lattice[r]), 1):
             # format is: [index, amino acid, previous index, next index]
             child_d2_lattice[r, c] = ["None", "None", "None", "None"]
-    while bump:
-        for i in range(len(child_traversal_sequence)):
-            random_number = random.randint(0, 100)
-            letter = ['F', 'L', 'R']
-            random_letter_index = random.randint(0, 2)
-            if random_number <= mutation_rate:
-                child_traversal_sequence[i] = letter[random_letter_index]
+    for i in range(len(child_traversal_sequence)):
+        random_number = random.randint(0, 100)
+        letter = ['F', 'L', 'R']
+        random_letter_index = random.randint(0, 2)
+        if random_number <= mutation_rate:
+            child_traversal_sequence[i] = letter[random_letter_index]
 
-        r_index = int(size)
-        c_index = int(size)  # indices in the d2_lattice matrix
-        orientation = 'E'  # current orientation in units of cardinal direction
-        for i in range(0, len(child_traversal_sequence), 1):
-            if i == 0:
-                child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], "None", i+1]
-            elif i == len(aa_sequence)-1:
-                child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], i-1, "None"]
-            else:
-                child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], i-1, i+1]
+    r_index = int(size)
+    c_index = int(size)  # indices in the d2_lattice matrix
+    orientation = 'E'  # current orientation in units of cardinal direction
+    for i in range(0, len(child_traversal_sequence), 1):
+        if i == 0:
+            child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], "None", i+1]
+        elif i == len(aa_sequence)-1:
+            child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], i-1, "None"]
+        else:
+            child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], i-1, i+1]
 
-            current_traversal = child_traversal_sequence[i]
-            current_traversal_info = get_traversal_info(current_traversal, orientation)
-            new_r_index = r_index + current_traversal_info[0]
-            new_c_index = c_index + current_traversal_info[1]
-            if child_d2_lattice[new_r_index, new_c_index][0] == "None":
-                bump = False
-                orientation = current_traversal_info[2]
-                r_index = new_r_index
-                c_index = new_c_index
-            else:
-                bump = True
-                break
+        current_traversal = child_traversal_sequence[i]
+        current_traversal_info = get_traversal_info(current_traversal, orientation)
+        r_index = r_index + current_traversal_info[0]
+        c_index = c_index + current_traversal_info[1]
+        if not child_d2_lattice[r_index, c_index][0] == "None":
+            score = score - 5
+        orientation = current_traversal_info[2]
+        # if child_d2_lattice[new_r_index, new_c_index][0] == "None":
+        #     orientation = current_traversal_info[2]
+        #     r_index = new_r_index
+        #     c_index = new_c_index
     print("Mutation complete")
+    print(score)
     return [child_traversal_sequence, child_d2_lattice, score_lattice(child_d2_lattice)]
 
 
