@@ -1,13 +1,29 @@
+# Simulates DNA sequence partitioning
+# Inputs:
+#      string filename: input file name
+
+# Sample call: python genetic_algorithm.py "SeaCucumberGlobin.txt"
+
 import numpy
 import sys
 import random
+from matplotlib import pyplot
 
 
 def main():
-    # filename = "SeaCucumberGlobin.txt"
-    # size = 100
-    # population = create_initial_population(filename, size)
-    filename = "SeaCucumberGlobin.txt"
+    if len(sys.argv) < 2:  # Verifying there aren't too few inputs
+        print("Error: Too few inputs.\n")
+        sys.exit(1)
+    if len(sys.argv) > 2:  # Verifying there aren't too many inputs
+        print("Error: Too many inputs.\n")
+        sys.exit(1)
+
+    try:  # Verifying input of filename is correct and storing it in variable filename
+        filename = sys.argv[1]
+    except ValueError:
+        print("Error: input for filename must be of type string.")
+        sys.exit(1)
+
     # open and read amino acid sequence from the fasta file
     try:
         input_file = open(filename, "r")
@@ -23,21 +39,53 @@ def main():
     for sequence_segment in aa_sequence_raw:
         for aa in sequence_segment:
             aa_sequence.append(aa)
+
     size = 100
     population = create_initial_population(aa_sequence, size)
-    scores = []
-    parents = []
-    for i in range(len(population)):
-        scores.append(population[i][2])
-        parents.append(population[i][0])
+    epoch = 0
+    average_score = 0
+    avg_scores = []
+    max_score = 0
+    when_to_break = 0
 
-    breeders = select_parents(scores, parents)
-    children = []
-    for i in range(0, len(population), 1):
-        child = create_child(breeders, aa_sequence)
-        children.append(child)
+    # This while loop evolves the fold sequences
+    while epoch < 27:
 
-    print(numpy.average(scores))
+        scores = []
+        parents = []
+
+        for i in range(len(population)):
+            scores.append(population[i][2])
+            parents.append(population[i][0])
+
+        breeders = select_parents(scores, parents)
+        children = []
+        for i in range(0, len(population), 1):
+            child = create_child(breeders, aa_sequence)
+            children.append(child)
+
+        # print(numpy.average(scores))
+
+        if max_score < average_score:
+            max_score = average_score
+            when_to_break = 0
+        else:
+            when_to_break = when_to_break + 1
+
+        # If we have gotten to the maximum score for 10 iterations we stop running the algorithm.
+        if when_to_break == 10:
+            print("The maximum score is: " + str(max_score))
+            break
+
+        epoch += 1
+        population.clear()
+        population = children
+        average_score = sum(scores) / len(scores)
+        print("The score of the fold for epoch " + str(epoch) + " is: ")
+        print(average_score)
+        avg_scores.append(average_score)
+    plot(avg_scores, max_score)
+
     return 0
 
 
@@ -47,7 +95,7 @@ def create_initial_population(aa_sequence, size):
     initial_population = []  # variable to store the initial population
     while len(initial_population) < size:
         member = []  # variable to represent a member of the initial population in the form [traverse_sequence, d2_lattice, score]
-        d2_lattice = numpy.ndarray([2*size+2, 2*size+2], dtype=object)
+        d2_lattice = numpy.ndarray([2 * size + 2, 2 * size + 2], dtype=object)
         for r in range(0, len(d2_lattice), 1):
             for c in range(0, len(d2_lattice[r]), 1):
                 # format is: [index, amino acid, previous index, next index]
@@ -61,11 +109,11 @@ def create_initial_population(aa_sequence, size):
             bump = True
             # insert amino acids into the positions they should go
             if i == 0:
-                d2_lattice[r_index, c_index] = [i, aa_sequence[i], "None", i+1]
-            elif i == len(aa_sequence)-1:
-                d2_lattice[r_index, c_index] = [i, aa_sequence[i], i-1, "None"]
+                d2_lattice[r_index, c_index] = [i, aa_sequence[i], "None", i + 1]
+            elif i == len(aa_sequence) - 1:
+                d2_lattice[r_index, c_index] = [i, aa_sequence[i], i - 1, "None"]
             else:
-                d2_lattice[r_index, c_index] = [i, aa_sequence[i], i-1, i+1]
+                d2_lattice[r_index, c_index] = [i, aa_sequence[i], i - 1, i + 1]
 
             # loop to catch a bump and try to avoid it
             tries_remaining = 27  # has 27 tries to choose a traversal that doesn't result in a bump
@@ -191,10 +239,10 @@ def score_lattice(d2_lattice):
             if not current_aa[0] == "None":
                 if amino_dict[current_aa[1]] == 'H':
                     # check for nearby H's
-                    above_aa = d2_lattice[r-1, c]
-                    left_aa = d2_lattice[r, c-1]
-                    right_aa = d2_lattice[r, c+1]
-                    below_aa = d2_lattice[r+1, c]
+                    above_aa = d2_lattice[r - 1, c]
+                    left_aa = d2_lattice[r, c - 1]
+                    right_aa = d2_lattice[r, c + 1]
+                    below_aa = d2_lattice[r + 1, c]
                     # check if right amino acid is an H
                     if not right_aa[1] == "None":
                         if amino_dict[right_aa[1]] == 'H':
@@ -249,7 +297,7 @@ def select_parents(scores, parents):
 
     # Now the pool contains the parents in their corresponding proportions relative to the pool size
     # Randomize the pool of parents and then randomly select two parents.
-    random.shuffle(pool)
+    # random.shuffle(pool)
     parent_one_index = 1
     parent_two_index = 1
 
@@ -301,26 +349,46 @@ def mutate(child_traversal_sequence, aa_sequence):
     orientation = 'E'  # current orientation in units of cardinal direction
     for i in range(0, len(child_traversal_sequence), 1):
         if i == 0:
-            child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], "None", i+1]
-        elif i == len(aa_sequence)-1:
-            child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], i-1, "None"]
+            child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], "None", i + 1]
+        elif i == len(aa_sequence) - 1:
+            child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], i - 1, "None"]
         else:
-            child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], i-1, i+1]
+            child_d2_lattice[r_index, c_index] = [i, aa_sequence[i], i - 1, i + 1]
 
         current_traversal = child_traversal_sequence[i]
         current_traversal_info = get_traversal_info(current_traversal, orientation)
         r_index = r_index + current_traversal_info[0]
         c_index = c_index + current_traversal_info[1]
         if not child_d2_lattice[r_index, c_index][0] == "None":
-            score = score - 5
+            score = score - 2000
         orientation = current_traversal_info[2]
         # if child_d2_lattice[new_r_index, new_c_index][0] == "None":
         #     orientation = current_traversal_info[2]
         #     r_index = new_r_index
         #     c_index = new_c_index
-    print("Mutation complete")
-    print(score)
+    # print("Mutation complete")
+    # print(score)
     return [child_traversal_sequence, child_d2_lattice, score_lattice(child_d2_lattice)]
+
+
+def plot(avg_scores, max_score):
+    figure = pyplot.figure()
+    font = "Comic Sans MS"
+    graph_area = figure.add_subplot(111)
+    x_values = []
+    for i in range(0, len(avg_scores), 1):
+        x_values.append(i)
+    graph_area.get_xaxis().set_ticks(x_values)
+    pyplot.ylim(0, 100)
+    pyplot.xlim(1, len(avg_scores))
+    pyplot.plot(x_values, avg_scores)
+    pyplot.hlines(max_score, colors="red", label="Maximum Score", font=font)
+    figure.suptitle('Average Lattice Scores (Pop. = 100)', font=font)
+    pyplot.xlabel('Epoch', font=font)
+    pyplot.ylabel('Avg. Score', font=font)
+
+    pyplot.show()
+    return 0
 
 
 if __name__ == '__main__':
