@@ -382,10 +382,10 @@ def plot(avg_scores, max_score):
     pyplot.ylim(0, 100)
     pyplot.xlim(1, len(avg_scores))
     pyplot.plot(x_values, avg_scores)
-    pyplot.axhline(y=max_score, color="red", label="Maximum Score", font=font, linestyle="-")
-    figure.suptitle('Average Lattice Scores (Pop. = 100)', font=font)
-    pyplot.xlabel('Epoch', font=font)
-    pyplot.ylabel('Avg. Score', font=font)
+    pyplot.axhline(y=max_score, color="red", label="Maximum Score", linestyle="-")
+    figure.suptitle('Average Lattice Scores (Pop. = 100)')
+    pyplot.xlabel('Epoch')
+    pyplot.ylabel('Avg. Score')
 
     pyplot.show()
     return 0
